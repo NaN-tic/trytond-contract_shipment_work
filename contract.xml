@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tryton>
+    <data>
+        <record model="ir.ui.view" id="contract_service_view_form">
+            <field name="model">contract.service</field>
+            <field name="inherit"
+                ref="contract.contract_service_view_form"/>
+            <field name="name">contract_service_form</field>
+        </record>
+
+        <record model="ir.ui.view" id="contract_service_view_list">
+            <field name="model">contract.service</field>
+            <field name="inherit"
+                ref="contract.contract_service_view_list"/>
+            <field name="name">contract_service_list</field>
+        </record>
+
+       <record model="ir.ui.view" id="contract_line_view_list">
+            <field name="model">contract.line</field>
+            <field name="inherit"
+                ref="contract.contract_line_view_list"/>
+            <field name="name">contract_line_list</field>
+        </record>
+
+        <record model="ir.ui.view" id="contract_line_view_form">
+            <field name="model">contract.line</field>
+            <field name="inherit"
+                ref="contract.contract_line_view_form"/>
+            <field name="name">contract_line_form</field>
+        </record>
+
+        <record model="ir.ui.view" id="create_shipments_start_view_form">
+            <field name="model">contract.create_shipments.start</field>
+            <field name="type">form</field>
+            <field name="name">create_shipments_start_form</field>
+        </record>
+
+        <record model="ir.action.wizard" id="wizard_create_shipments">
+            <field name="name">Create Shipments</field>
+            <field name="wiz_name">contract.create_shipments</field>
+        </record>
+
+        <menuitem name="Create Shipments Work" parent="contract.menu_contract"
+            sequence="40" action="wizard_create_shipments"
+            id="menu_create_shipments"/>
+    </data>
+</tryton>
