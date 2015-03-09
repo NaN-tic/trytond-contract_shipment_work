@@ -71,7 +71,7 @@ class ContractLine:
 
     def get_shipment_works(self, end_date):
         shipment_works = []
-        if not self.create_shipment_work:
+        if not self.create_shipment_work or self.service.freq is None:
             return shipment_works
 
         start_date = self.last_work_shipment_date or self.first_shipment_date
