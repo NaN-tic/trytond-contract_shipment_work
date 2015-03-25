@@ -1,0 +1,91 @@
+# 
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "field:contract.create_shipments.start,date:"
+msgid "Date"
+msgstr "Fecha"
+
+msgctxt "field:contract.create_shipments.start,id:"
+msgid "ID"
+msgstr "Identificador"
+
+msgctxt "field:contract.line,create_shipment_work:"
+msgid "Create Shipments?"
+msgstr "Crear albaranes?"
+
+msgctxt "field:contract.line,first_shipment_date:"
+msgid "First Shipment Date"
+msgstr "Fecha primera factura"
+
+msgctxt "field:contract.line,last_work_shipment_date:"
+msgid "Last Work Shipment Date"
+msgstr "Fecha último albarán de trabajo"
+
+msgctxt "field:contract.service,freq:"
+msgid "Frequency"
+msgstr "Frecuencia"
+
+msgctxt "field:contract.service,interval:"
+msgid "Interval"
+msgstr "Intervalo"
+
+msgctxt "field:contract.service,work_description:"
+msgid "Work Desctiption"
+msgstr "Descripción trabajao"
+
+msgctxt "field:shipment.work,contract_line:"
+msgid "Contract Line"
+msgstr "Línea de contrato"
+
+msgctxt "model:contract.create_shipments.start,name:"
+msgid "Create Shipments Start"
+msgstr "Inicio crear albaranes de trabajo"
+
+msgctxt "model:ir.action,name:wizard_create_shipments"
+msgid "Create Shipments"
+msgstr "Crear albaranes"
+
+msgctxt "model:ir.ui.menu,name:menu_create_shipments"
+msgid "Create Shipments Work"
+msgstr "Crear albaranes de trabajo"
+
+msgctxt "selection:contract.service,freq:"
+msgid "Daily"
+msgstr "Diariamente"
+
+msgctxt "selection:contract.service,freq:"
+msgid "Monthly"
+msgstr "Mensualmente"
+
+msgctxt "selection:contract.service,freq:"
+msgid "None"
+msgstr "Ninguno"
+
+msgctxt "selection:contract.service,freq:"
+msgid "Weekly"
+msgstr "Semanalmente"
+
+msgctxt "selection:contract.service,freq:"
+msgid "Yearly"
+msgstr "Anualmente"
+
+msgctxt "view:contract.create_shipments.start:"
+msgid "Create Contract Shipment Work up to"
+msgstr "Crear albaranes de trabajo de contrato hasta la fecha"
+
+msgctxt "view:contract.create_shipments.start:"
+msgid "Create Shipments Work"
+msgstr "Crear albaranes de trabajo"
+
+msgctxt "view:contract.service:"
+msgid "Shipment Work Frequency"
+msgstr "Frecuencia albaranes de trabajo"
+
+msgctxt "wizard_button:contract.create_shipments,start,create_shipments:"
+msgid "OK"
+msgstr "Crear"
+
+msgctxt "wizard_button:contract.create_shipments,start,end:"
+msgid "Cancel"
+msgstr "Cancel·lar"
