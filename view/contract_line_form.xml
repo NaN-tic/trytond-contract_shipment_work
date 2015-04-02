@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!-- The COPYRIGHT file at the top level of this repository contains the full
+     copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/separator[@name='description']" position="before">
+        <label name="create_shipment_work"/>
+        <field name="create_shipment_work"/>
+        <label name="first_shipment_date"/>
+        <field name="first_shipment_date"/>
+    </xpath>
+</data>
