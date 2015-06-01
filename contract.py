@@ -90,7 +90,7 @@ class ContractLine:
         shipment = ShipmentWork()
         shipment.party = self.contract.party
         shipment.planned_date = planned_date
-        shipment.contract_lin = self
+        shipment.contract_line = self
         shipment.work_description = self.service.work_description
         return shipment
 
