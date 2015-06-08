@@ -183,6 +183,7 @@ Create monthly service::
 
     >>> Service = Model.get('contract.service')
     >>> service = Service()
+    >>> service.name = 'Service'
     >>> service.product = product
     >>> service.freq = 'monthly'
     >>> service.interval = 1
