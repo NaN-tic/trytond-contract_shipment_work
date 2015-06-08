@@ -16,7 +16,7 @@ msgstr "Crear albaranes?"
 
 msgctxt "field:contract.line,first_shipment_date:"
 msgid "First Shipment Date"
-msgstr "Fecha primera factura"
+msgstr "Fecha primer albarán"
 
 msgctxt "field:contract.line,last_work_shipment_date:"
 msgid "Last Work Shipment Date"
