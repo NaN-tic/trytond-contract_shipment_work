@@ -28,6 +28,11 @@ class ContractService(RRuleMixin):
 
     work_description = fields.Text('Work Desctiption', translate=True)
 
+    @classmethod
+    def __setup__(cls):
+        super(ContractService, cls).__setup__()
+        cls._rec_name = 'name'  # Avoid overringind rec_name from Mixin
+
     def rrule_values(self):
         values = super(ContractService, self).rrule_values()
         return values
