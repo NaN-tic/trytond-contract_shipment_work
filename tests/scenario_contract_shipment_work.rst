@@ -211,6 +211,8 @@ Create a contract::
     >>> line = contract.lines.new()
     >>> line.service = service
     >>> line.create_shipment_work = True
+    >>> line.start_date =  datetime.date(2015,01,05)
+    >>> line.first_invoice_date =  datetime.date(2015,01,05)
     >>> line.first_shipment_date =  datetime.date(2015,01,05)
     >>> line.unit_price
     Decimal('40')
