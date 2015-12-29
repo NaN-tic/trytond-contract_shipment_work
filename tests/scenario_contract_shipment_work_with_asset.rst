@@ -1,9 +1,9 @@
-=====================================
-Monthly Shipment Work Scenario
-=====================================
-
+=============
+Sale Scenario
+=============
 
 Imports::
+
     >>> import datetime
     >>> from dateutil.relativedelta import relativedelta
     >>> from decimal import Decimal
@@ -18,12 +18,13 @@ Create database::
     >>> config = config.set_trytond()
     >>> config.pool.test = True
 
-Install account_invoice::
+Install sale::
 
     >>> Module = Model.get('ir.module.module')
-    >>> contract_module, = Module.find([
-    ...     ('name', '=', 'contract_shipment_work')])
-    >>> contract_module.click('install')
+    >>> module, = Module.find([('name', '=', 'asset_contract')])
+    >>> module.click('install')
+    >>> module, = Module.find([('name', '=', 'contract_shipment_work')])
+    >>> module.click('install')
     >>> Wizard('ir.module.module.install_upgrade').execute('upgrade')
 
 Create company::
@@ -32,9 +33,9 @@ Create company::
     >>> CurrencyRate = Model.get('currency.currency.rate')
     >>> currencies = Currency.find([('code', '=', 'USD')])
     >>> if not currencies:
-    ...     currency = Currency(name='US Dollar', symbol=u'$', code='USD',
-    ...         rounding=Decimal('0.01'), mon_grouping='[]',
-    ...         mon_decimal_point='.')
+    ...     currency = Currency(name='U.S. Dollar', symbol='$', code='USD',
+    ...         rounding=Decimal('0.01'), mon_grouping='[3, 3, 0]',
+    ...         mon_decimal_point='.', mon_thousands_sep=',')
     ...     currency.save()
     ...     CurrencyRate(date=today + relativedelta(month=1, day=1),
     ...         rate=Decimal('1.0'), currency=currency).save()
@@ -84,6 +85,7 @@ Create chart of accounts::
 
     >>> AccountTemplate = Model.get('account.account.template')
     >>> Account = Model.get('account.account')
+    >>> Journal = Model.get('account.journal')
     >>> account_template, = AccountTemplate.find([('parent', '=', None)])
     >>> create_chart = Wizard('account.create_chart')
     >>> create_chart.execute('account')
@@ -106,45 +108,32 @@ Create chart of accounts::
     ...         ('kind', '=', 'expense'),
     ...         ('company', '=', company.id),
     ...         ])
-    >>> account_tax, = Account.find([
-    ...         ('kind', '=', 'other'),
-    ...         ('company', '=', company.id),
-    ...         ('name', '=', 'Main Tax'),
-    ...         ])
     >>> create_chart.form.account_receivable = receivable
     >>> create_chart.form.account_payable = payable
     >>> create_chart.execute('create_properties')
+    >>> cash, = Account.find([
+    ...         ('kind', '=', 'other'),
+    ...         ('name', '=', 'Main Cash'),
+    ...         ('company', '=', company.id),
+    ...         ])
+    >>> cash_journal, = Journal.find([('type', '=', 'cash')])
+    >>> cash_journal.credit_account = cash
+    >>> cash_journal.debit_account = cash
+    >>> cash_journal.save()
 
-Create tax::
-
-    >>> TaxCode = Model.get('account.tax.code')
-    >>> Tax = Model.get('account.tax')
-    >>> tax = Tax()
-    >>> tax.name = 'Tax'
-    >>> tax.description = 'Tax'
-    >>> tax.type = 'percentage'
-    >>> tax.rate = Decimal('.10')
-    >>> tax.invoice_account = account_tax
-    >>> tax.credit_note_account = account_tax
-    >>> invoice_base_code = TaxCode(name='invoice base')
-    >>> invoice_base_code.save()
-    >>> tax.invoice_base_code = invoice_base_code
-    >>> invoice_tax_code = TaxCode(name='invoice tax')
-    >>> invoice_tax_code.save()
-    >>> tax.invoice_tax_code = invoice_tax_code
-    >>> credit_note_base_code = TaxCode(name='credit note base')
-    >>> credit_note_base_code.save()
-    >>> tax.credit_note_base_code = credit_note_base_code
-    >>> credit_note_tax_code = TaxCode(name='credit note tax')
-    >>> credit_note_tax_code.save()
-    >>> tax.credit_note_tax_code = credit_note_tax_code
-    >>> tax.save()
-
-Create party::
+Create parties::
 
     >>> Party = Model.get('party.party')
-    >>> party = Party(name='Party')
-    >>> party.save()
+    >>> supplier = Party(name='Supplier')
+    >>> supplier.save()
+    >>> customer = Party(name='Customer')
+    >>> customer.save()
+
+Create category::
+
+    >>> ProductCategory = Model.get('product.category')
+    >>> category = ProductCategory(name='Category')
+    >>> category.save()
 
 Create product::
 
@@ -155,40 +144,53 @@ Create product::
     >>> product = Product()
     >>> template = ProductTemplate()
     >>> template.name = 'product'
+    >>> template.category = category
     >>> template.default_uom = unit
-    >>> template.type = 'service'
-    >>> template.list_price = Decimal('40')
-    >>> template.cost_price = Decimal('25')
+    >>> template.type = 'assets'
+    >>> template.purchasable = True
+    >>> template.salable = True
+    >>> template.list_price = Decimal('10')
+    >>> template.cost_price = Decimal('8')
+    >>> template.cost_price_method = 'fixed'
     >>> template.account_expense = expense
     >>> template.account_revenue = revenue
-    >>> template.customer_taxes.append(tax)
     >>> template.save()
     >>> product.template = template
     >>> product.save()
+
+    >>> service_product = Product()
+    >>> template = ProductTemplate()
+    >>> template.name = 'service'
+    >>> template.default_uom = unit
+    >>> template.type = 'service'
+    >>> template.salable = True
+    >>> template.list_price = Decimal('30')
+    >>> template.cost_price = Decimal('10')
+    >>> template.cost_price_method = 'fixed'
+    >>> template.account_expense = expense
+    >>> template.account_revenue = revenue
+    >>> template.save()
+    >>> service_product.template = template
+    >>> service_product.save()
 
 Create payment term::
 
     >>> PaymentTerm = Model.get('account.invoice.payment_term')
     >>> PaymentTermLine = Model.get('account.invoice.payment_term.line')
-    >>> payment_term = PaymentTerm(name='Term')
-    >>> payment_term_line = PaymentTermLine(type='percent', days=20,
-    ...     percentage=Decimal(50))
-    >>> payment_term.lines.append(payment_term_line)
-    >>> payment_term_line = PaymentTermLine(type='remainder', days=40)
+    >>> payment_term = PaymentTerm(name='Direct')
+    >>> payment_term_line = PaymentTermLine(type='remainder', days=0)
     >>> payment_term.lines.append(payment_term_line)
     >>> payment_term.save()
-    >>> party.customer_payment_term = payment_term
-    >>> party.save()
 
-Create monthly service::
+Create an asset::
 
-    >>> Service = Model.get('contract.service')
-    >>> service = Service()
-    >>> service.name = 'Service'
-    >>> service.product = product
-    >>> service.freq = 'monthly'
-    >>> service.interval = 1
-    >>> service.save()
+    >>> Asset = Model.get('asset')
+    >>> asset = Asset()
+    >>> asset.name = 'Asset'
+    >>> asset.product = product
+    >>> asset.owner = customer
+    >>> asset.save()
+
 
 Configure shipment work::
 
@@ -201,32 +203,49 @@ Configure shipment work::
     >>> stock_config.save()
 
 
+Create daily service::
+
+    >>> Service = Model.get('contract.service')
+    >>> service = Service()
+    >>> service.product = service_product
+    >>> service.name = 'Service'
+    >>> service.freq = 'daily'
+    >>> service.interval = 1
+    >>> service.save()
+
 Create a contract::
 
     >>> Contract = Model.get('contract')
     >>> contract = Contract()
-    >>> contract.party = party
-    >>> contract.start_period_date = datetime.date(2015,01,01)
-    >>> contract.start_date = datetime.date(2015,01,01)
+    >>> contract.party = customer
+    >>> contract.start_date = today
+    >>> contract.start_period_date = today
     >>> contract.freq = 'monthly'
     >>> line = contract.lines.new()
     >>> line.service = service
     >>> line.create_shipment_work = True
-    >>> line.start_date =  datetime.date(2015,01,05)
-    >>> line.first_invoice_date =  datetime.date(2015,01,05)
-    >>> line.first_shipment_date =  datetime.date(2015,01,05)
-    >>> line.unit_price
-    Decimal('40')
+    >>> line.start_date = today
+    >>> line.first_invoice_date = today
+    >>> line.first_shipment_date = today
+    >>> line.asset = asset
     >>> contract.click('validate_contract')
     >>> contract.state
     u'validated'
 
-Generate consumed lines::
+Create a shipments::
+
     >>> create_shipments = Wizard('contract.create_shipments')
-    >>> create_shipments.form.date = datetime.date(2015,02,01)
+    >>> create_shipments.form.date = today + relativedelta(days=+1)
     >>> create_shipments.execute('create_shipments')
     >>> Shipment = Model.get('shipment.work')
-    >>> shipment, = Shipment.find([])
-    >>> shipment.planned_date == datetime.date(2015,01,05)
+    >>> shipments = Shipment.find([])
+    >>> shipment = shipments[0]
+    >>> shipment.planned_date == today.date()
+    True
+
+The asset has a maintenance planned for the same date::
+
+    >>> asset.reload()
+    >>> asset.shipments[0].planned_date == today.date()
     True
 
