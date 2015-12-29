@@ -7,7 +7,7 @@ from sql.aggregate import Max
 
 from trytond.model import fields, ModelView
 from trytond.pool import Pool, PoolMeta
-from trytond.pyson import Eval, Bool, Not
+from trytond.pyson import Eval, If, Bool
 from trytond.transaction import Transaction
 from trytond.tools import reduce_ids
 from trytond.wizard import Wizard, StateView, StateAction, Button
@@ -15,7 +15,7 @@ from trytond.wizard import Wizard, StateView, StateAction, Button
 from trytond.modules.contract import RRuleMixin
 
 __all__ = ['ContractService', 'CreateShipmentsStart', 'CreateShipments',
-    'ContractLine', 'ShipmentWork']
+    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct', 'Asset']
 __metaclass__ = PoolMeta
 
 
@@ -45,6 +45,48 @@ class ShipmentWork:
     contract_line = fields.Many2One('contract.line', 'Contract Line',
         select=True)
 
+    @classmethod
+    def __setup__(cls):
+        super(ShipmentWork, cls).__setup__()
+        pool = Pool()
+        Asset = None
+        try:
+            Asset = pool.get('asset')
+        except KeyError:
+            pass
+        if Asset:
+            cls.asset = fields.Many2One('asset', 'Asset',
+                domain=[
+                    If(Bool(Eval('party')),
+                        [('owner', '=', Eval('party'))],
+                        []),
+                    ],
+                depends=['party'])
+
+    @fields.depends('asset', 'employees')
+    def on_change_asset(self):
+        changes = {}
+        if self.asset:
+            if (hasattr(self.asset, 'zone') and self.asset.zone and
+                    self.asset.zone.employee):
+                changes['employees'] = [self.asset.zone.employee.id]
+            if self.asset.owner:
+                changes['party'] = self.asset.owner.id
+        return changes
+
+
+class ShipmentWorkProduct:
+    __name__ = 'shipment.work.product'
+
+    def get_sale_line(self, sale, invoice_method):
+        line = super(ShipmentWorkProduct, self).get_sale_line(sale,
+            invoice_method)
+        if not line:
+            return
+        if hasattr(self.shipment, 'asset'):
+            line.asset = self.shipment.asset
+        return line
+
 
 class ContractLine:
     __name__ = 'contract.line'
@@ -56,7 +98,7 @@ class ContractLine:
     first_shipment_date = fields.Date('First Shipment Date',
         states={
             'required': Bool(Eval('create_shipment_work')),
-            'invisible': Not(Bool(Eval('create_shipment_work'))),
+            'invisible': ~Bool(Eval('create_shipment_work')),
             }, depends=['create_shipment_work'])
 
     @classmethod
@@ -97,6 +139,14 @@ class ContractLine:
         shipment.planned_date = planned_date
         shipment.contract_line = self
         shipment.work_description = self.service.work_description
+        if self.contract.party.customer_payment_term:
+            shipment.payment_term = self.contract.party.customer_payment_term
+        if hasattr(self, 'asset'):
+            shipment.asset = self.asset
+            # Compatibilty with aset_zone module:
+            if hasattr(self.asset, 'zone') and self.asset.zone and \
+                    self.asset.zone.employee:
+                shipment.employees = [self.asset.zone.employee]
         return shipment
 
     @classmethod
@@ -146,3 +196,9 @@ class CreateShipments(Wizard):
         if len(shipments) == 1:
             action['views'].reverse()
         return action, data
+
+
+class Asset:
+    __name__ = 'asset'
+
+    shipments = fields.One2Many('shipment.work', 'asset', 'Work Shipments')

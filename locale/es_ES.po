@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
@@ -41,6 +41,10 @@ msgstr "Línea de contrato"
 msgctxt "model:contract.create_shipments.start,name:"
 msgid "Create Shipments Start"
 msgstr "Inicio crear albaranes de trabajo"
+
+msgctxt "model:ir.action,name:act_shipment_work_form"
+msgid "Shipment Work"
+msgstr "Albaranes de trabajo"
 
 msgctxt "model:ir.action,name:wizard_create_shipments"
 msgid "Create Shipments"
