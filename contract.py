@@ -47,7 +47,6 @@ class ShipmentWork:
 
     @classmethod
     def __setup__(cls):
-        super(ShipmentWork, cls).__setup__()
         pool = Pool()
         Asset = None
         try:
@@ -55,6 +54,7 @@ class ShipmentWork:
         except KeyError:
             pass
         if Asset:
+            # Register asset before __setup__ so on_change are not cleared
             cls.asset = fields.Many2One('asset', 'Asset',
                 domain=[
                     If(Bool(Eval('party')),
@@ -62,6 +62,7 @@ class ShipmentWork:
                         []),
                     ],
                 depends=['party'])
+        super(ShipmentWork, cls).__setup__()
 
     @fields.depends('asset', 'employees')
     def on_change_asset(self):
