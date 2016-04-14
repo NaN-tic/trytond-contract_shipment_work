@@ -12,7 +12,7 @@ from trytond.transaction import Transaction
 from trytond.tools import reduce_ids
 from trytond.wizard import Wizard, StateView, StateAction, Button
 
-from trytond.modules.contract import RRuleMixin
+from trytond.modules.contract.contract import RRuleMixin
 
 __all__ = ['ContractService', 'CreateShipmentsStart', 'CreateShipments',
     'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct', 'Asset']
@@ -66,14 +66,12 @@ class ShipmentWork:
 
     @fields.depends('asset', 'employees')
     def on_change_asset(self):
-        changes = {}
         if self.asset:
             if (hasattr(self.asset, 'zone') and self.asset.zone and
                     self.asset.zone.employee):
-                changes['employees'] = [self.asset.zone.employee.id]
+                self.employees = [self.asset.zone.employee.id]
             if self.asset.owner:
-                changes['party'] = self.asset.owner.id
-        return changes
+                self.party = self.asset.owner.id
 
 
 class ShipmentWorkProduct:
