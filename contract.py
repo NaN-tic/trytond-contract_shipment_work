@@ -7,7 +7,7 @@ from sql.aggregate import Max
 
 from trytond.model import fields, ModelView
 from trytond.pool import Pool, PoolMeta
-from trytond.pyson import Eval, If, Bool
+from trytond.pyson import Eval, Bool
 from trytond.transaction import Transaction
 from trytond.tools import reduce_ids
 from trytond.wizard import Wizard, StateView, StateAction, Button
@@ -15,8 +15,7 @@ from trytond.wizard import Wizard, StateView, StateAction, Button
 from trytond.modules.contract.contract import RRuleMixin
 
 __all__ = ['ContractService', 'CreateShipmentsStart', 'CreateShipments',
-    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct', 'Asset']
-__metaclass__ = PoolMeta
+    'ContractLine', 'ShipmentWork']
 
 
 def todatetime(date):
@@ -39,55 +38,16 @@ class ContractService(RRuleMixin):
 
 
 class ShipmentWork:
+    __metaclass__ = PoolMeta
     __name__ = 'shipment.work'
 
     # TODO: Maybe origin could be better.
     contract_line = fields.Many2One('contract.line', 'Contract Line',
         select=True)
 
-    @classmethod
-    def __setup__(cls):
-        pool = Pool()
-        Asset = None
-        try:
-            Asset = pool.get('asset')
-        except KeyError:
-            pass
-        if Asset:
-            # Register asset before __setup__ so on_change are not cleared
-            cls.asset = fields.Many2One('asset', 'Asset',
-                domain=[
-                    If(Bool(Eval('party')),
-                        [('owner', '=', Eval('party'))],
-                        []),
-                    ],
-                depends=['party'])
-        super(ShipmentWork, cls).__setup__()
-
-    @fields.depends('asset', 'employees')
-    def on_change_asset(self):
-        if self.asset:
-            if (hasattr(self.asset, 'zone') and self.asset.zone and
-                    self.asset.zone.employee):
-                self.employees = [self.asset.zone.employee.id]
-            if self.asset.owner:
-                self.party = self.asset.owner.id
-
-
-class ShipmentWorkProduct:
-    __name__ = 'shipment.work.product'
-
-    def get_sale_line(self, sale, invoice_method):
-        line = super(ShipmentWorkProduct, self).get_sale_line(sale,
-            invoice_method)
-        if not line:
-            return
-        if hasattr(self.shipment, 'asset'):
-            line.asset = self.shipment.asset
-        return line
-
 
 class ContractLine:
+    __metaclass__ = PoolMeta
     __name__ = 'contract.line'
 
     last_work_shipment_date = fields.Function(fields.Date(
@@ -105,7 +65,8 @@ class ContractLine:
         pool = Pool()
         Shipment = pool.get('shipment.work')
         table = Shipment.__table__()
-        cursor = Transaction().cursor
+        cursor = Transaction().connection.cursor()
+
         line_ids = [l.id for l in lines]
         values = dict.fromkeys(line_ids, None)
         cursor.execute(*table.select(table.contract_line,
@@ -131,28 +92,66 @@ class ContractLine:
         return shipment_works
 
     def get_shipment_work(self, planned_date):
-        pool = Pool()
-        ShipmentWork = pool.get('shipment.work')
+        ShipmentWork = Pool().get('shipment.work')
+
         shipment = ShipmentWork()
         shipment.party = self.contract.party
+        shipment.project = None
+        shipment.on_change_party()
         shipment.planned_date = planned_date
         shipment.contract_line = self
         shipment.work_description = self.service.work_description
+
         if self.contract.party.customer_payment_term:
             shipment.payment_term = self.contract.party.customer_payment_term
+
         if hasattr(self, 'asset'):
             shipment.asset = self.asset
-            # Compatibilty with aset_zone module:
+            # Compatibilty with asset_zone module:
             if hasattr(self.asset, 'zone') and self.asset.zone and \
                     self.asset.zone.employee:
                 shipment.employees = [self.asset.zone.employee]
+
         return shipment
+
+    def get_project_work(self):
+        ProjectWork = Pool().get('project.work')
+
+        party = self.contract.party
+        project = ProjectWork()
+        project.name = party.rec_name
+        project.parent = None
+        project.type = 'project'
+        project.party = party
+
+        return project
 
     @classmethod
     def create_shipment_works(cls, lines, date=None):
         'Create shipment works until date'
         pool = Pool()
         ShipmentWork = pool.get('shipment.work')
+        ProjectWork = pool.get('project.work')
+
+        # create project work before create shipment work because
+        # get_shipment_works was slow in each ProjectWork.save()
+        parties = set()
+        for line in lines:
+            parties.add(line.contract.party.id)
+
+        to_create_projects = []
+        to_find = [pw.party.id for pw in ProjectWork.search([
+                ('party', 'in', list(parties)),
+                ('parent', '=', None),
+                ('type', '=', 'project'),
+                ])]
+        for line in lines:
+            if line.contract.party.id not in to_find:
+                to_create_projects.append(line.get_project_work())
+
+        if to_create_projects:
+            ProjectWork.create([c._save_values for c in to_create_projects])
+        # end to create all project works
 
         to_create = []
         for line in lines:
@@ -195,9 +194,3 @@ class CreateShipments(Wizard):
         if len(shipments) == 1:
             action['views'].reverse()
         return action, data
-
-
-class Asset:
-    __name__ = 'asset'
-
-    shipments = fields.One2Many('shipment.work', 'asset', 'Work Shipments')

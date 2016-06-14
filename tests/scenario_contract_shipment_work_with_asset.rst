@@ -1,6 +1,7 @@
-=============
-Sale Scenario
-=============
+==========================================
+Contract Shipment Work Scenario with Asset
+==========================================
+
 
 Imports::
 
@@ -24,13 +25,16 @@ Create database::
     >>> config = config.set_trytond()
     >>> config.pool.test = True
 
-Install sale::
+Install account_invoice::
 
     >>> Module = Model.get('ir.module')
-    >>> module, = Module.find([('name', '=', 'asset_contract')])
+    >>> module, = Module.find([('name', 'in', ['asset_contract'])])
     >>> module.click('install')
-    >>> module, = Module.find([('name', '=', 'contract_shipment_work')])
+    >>> module, = Module.find([('name', 'in', ['asset_shipment_work'])])
     >>> module.click('install')
+    >>> contract_module, = Module.find([
+    ...     ('name', '=', 'contract_shipment_work')])
+    >>> contract_module.click('install')
     >>> Wizard('ir.module.install_upgrade').execute('upgrade')
 
 Create company::
@@ -61,19 +65,11 @@ Create tax::
     >>> tax = create_tax(Decimal('.10'))
     >>> tax.save()
 
-Create parties::
+Create party::
 
     >>> Party = Model.get('party.party')
-    >>> supplier = Party(name='Supplier')
-    >>> supplier.save()
-    >>> customer = Party(name='Customer')
-    >>> customer.save()
-
-Create category::
-
-    >>> ProductCategory = Model.get('product.category')
-    >>> category = ProductCategory(name='Category')
-    >>> category.save()
+    >>> party = Party(name='Party')
+    >>> party.save()
 
 Create product::
 
@@ -84,16 +80,13 @@ Create product::
     >>> product = Product()
     >>> template = ProductTemplate()
     >>> template.name = 'product'
-    >>> template.category = category
     >>> template.default_uom = unit
     >>> template.type = 'assets'
-    >>> template.purchasable = True
-    >>> template.salable = True
-    >>> template.list_price = Decimal('10')
-    >>> template.cost_price = Decimal('8')
-    >>> template.cost_price_method = 'fixed'
+    >>> template.list_price = Decimal('40')
+    >>> template.cost_price = Decimal('25')
     >>> template.account_expense = expense
     >>> template.account_revenue = revenue
+    >>> template.customer_taxes.append(tax)
     >>> template.save()
     >>> product.template = template
     >>> product.save()
@@ -104,8 +97,8 @@ Create product::
     >>> template.default_uom = unit
     >>> template.type = 'service'
     >>> template.salable = True
-    >>> template.list_price = Decimal('30')
-    >>> template.cost_price = Decimal('10')
+    >>> template.list_price = Decimal('40')
+    >>> template.cost_price = Decimal('25')
     >>> template.cost_price_method = 'fixed'
     >>> template.account_expense = expense
     >>> template.account_revenue = revenue
@@ -116,11 +109,22 @@ Create product::
 Create payment term::
 
     >>> PaymentTerm = Model.get('account.invoice.payment_term')
-    >>> PaymentTermLine = Model.get('account.invoice.payment_term.line')
-    >>> payment_term = PaymentTerm(name='Direct')
-    >>> payment_term_line = PaymentTermLine(type='remainder', days=0)
-    >>> payment_term.lines.append(payment_term_line)
+    >>> payment_term = PaymentTerm(name='Term')
+    >>> line = payment_term.lines.new(type='percent', ratio=Decimal('.5'))
+    >>> delta = line.relativedeltas.new(days=20)
+    >>> line = payment_term.lines.new(type='remainder')
+    >>> delta = line.relativedeltas.new(days=40)
     >>> payment_term.save()
+
+Create monthly service::
+
+    >>> Service = Model.get('contract.service')
+    >>> service = Service()
+    >>> service.name = 'Service'
+    >>> service.product = service_product
+    >>> service.freq = 'monthly'
+    >>> service.interval = 1
+    >>> service.save()
 
 Create an asset::
 
@@ -128,12 +132,11 @@ Create an asset::
     >>> asset = Asset()
     >>> asset.name = 'Asset'
     >>> asset.product = product
-    >>> asset.owner = customer
     >>> asset.save()
-
 
 Configure shipment work::
 
+    >>> Sequence = Model.get('ir.sequence')
     >>> StockConfig = Model.get('stock.configuration')
     >>> stock_config = StockConfig(1)
     >>> shipment_work_sequence, = Sequence.find([
@@ -142,45 +145,35 @@ Configure shipment work::
     >>> stock_config.shipment_work_sequence = shipment_work_sequence
     >>> stock_config.save()
 
-
-Create daily service::
-
-    >>> Service = Model.get('contract.service')
-    >>> service = Service()
-    >>> service.product = service_product
-    >>> service.name = 'Service'
-    >>> service.freq = 'daily'
-    >>> service.interval = 1
-    >>> service.save()
-
 Create a contract::
 
     >>> Contract = Model.get('contract')
     >>> contract = Contract()
-    >>> contract.party = customer
-    >>> contract.start_date = today
-    >>> contract.start_period_date = today
+    >>> contract.party = party
+    >>> contract.start_period_date = datetime.date(today.year, 01, 01)
     >>> contract.freq = 'monthly'
+    >>> contract.interval = 1
+    >>> contract.first_invoice_date = datetime.date(today.year, 01, 31)
     >>> line = contract.lines.new()
-    >>> line.service = service
+    >>> line.start_date = datetime.date(today.year, 01, 01)
     >>> line.create_shipment_work = True
-    >>> line.start_date = today
-    >>> line.first_invoice_date = today
-    >>> line.first_shipment_date = today
+    >>> line.first_shipment_date = datetime.date(today.year, 01, 05)
+    >>> line.service = service
     >>> line.asset = asset
-    >>> contract.click('validate_contract')
+    >>> line.unit_price
+    Decimal('40')
+    >>> contract.click('confirm')
     >>> contract.state
-    u'validated'
+    u'confirmed'
 
-Create a shipments::
+Generate consumed lines::
 
     >>> create_shipments = Wizard('contract.create_shipments')
-    >>> create_shipments.form.date = today + relativedelta(days=+1)
+    >>> create_shipments.form.date = datetime.date(today.year, 02, 01)
     >>> create_shipments.execute('create_shipments')
     >>> Shipment = Model.get('shipment.work')
-    >>> shipments = Shipment.find([])
-    >>> shipment = shipments[0]
-    >>> shipment.planned_date == today.date()
+    >>> shipment, = Shipment.find([])
+    >>> shipment.planned_date == datetime.date(today.year, 01, 05)
     True
 
 The asset has a maintenance planned for the same date::
