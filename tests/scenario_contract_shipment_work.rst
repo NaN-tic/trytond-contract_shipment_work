@@ -1,9 +1,10 @@
-=====================================
-Monthly Shipment Work Scenario
-=====================================
+===============================
+Contract Shipment Work Scenario
+===============================
 
 
 Imports::
+
     >>> import datetime
     >>> from dateutil.relativedelta import relativedelta
     >>> from decimal import Decimal
@@ -89,16 +90,12 @@ Create product::
 Create payment term::
 
     >>> PaymentTerm = Model.get('account.invoice.payment_term')
-    >>> PaymentTermLine = Model.get('account.invoice.payment_term.line')
     >>> payment_term = PaymentTerm(name='Term')
-    >>> payment_term_line = PaymentTermLine(type='percent', days=20,
-    ...     percentage=Decimal(50))
-    >>> payment_term.lines.append(payment_term_line)
-    >>> payment_term_line = PaymentTermLine(type='remainder', days=40)
-    >>> payment_term.lines.append(payment_term_line)
+    >>> line = payment_term.lines.new(type='percent', ratio=Decimal('.5'))
+    >>> delta = line.relativedeltas.new(days=20)
+    >>> line = payment_term.lines.new(type='remainder')
+    >>> delta = line.relativedeltas.new(days=40)
     >>> payment_term.save()
-    >>> party.customer_payment_term = payment_term
-    >>> party.save()
 
 Create monthly service::
 
@@ -112,6 +109,7 @@ Create monthly service::
 
 Configure shipment work::
 
+    >>> Sequence = Model.get('ir.sequence')
     >>> StockConfig = Model.get('stock.configuration')
     >>> stock_config = StockConfig(1)
     >>> shipment_work_sequence, = Sequence.find([
@@ -120,32 +118,32 @@ Configure shipment work::
     >>> stock_config.shipment_work_sequence = shipment_work_sequence
     >>> stock_config.save()
 
-
 Create a contract::
 
     >>> Contract = Model.get('contract')
     >>> contract = Contract()
     >>> contract.party = party
-    >>> contract.start_period_date = datetime.date(2015,01,01)
-    >>> contract.start_date = datetime.date(2015,01,01)
+    >>> contract.start_period_date = datetime.date(today.year, 01, 01)
     >>> contract.freq = 'monthly'
+    >>> contract.interval = 1
+    >>> contract.first_invoice_date = datetime.date(today.year, 01, 31)
     >>> line = contract.lines.new()
-    >>> line.service = service
+    >>> line.start_date = datetime.date(today.year, 01, 01)
     >>> line.create_shipment_work = True
-    >>> line.start_date =  datetime.date(2015,01,05)
-    >>> line.first_invoice_date =  datetime.date(2015,01,05)
-    >>> line.first_shipment_date =  datetime.date(2015,01,05)
+    >>> line.first_shipment_date = datetime.date(today.year, 01, 05)
+    >>> line.service = service
     >>> line.unit_price
     Decimal('40')
-    >>> contract.click('validate_contract')
+    >>> contract.click('confirm')
     >>> contract.state
-    u'validated'
+    u'confirmed'
 
 Generate consumed lines::
+
     >>> create_shipments = Wizard('contract.create_shipments')
-    >>> create_shipments.form.date = datetime.date(2015,02,01)
+    >>> create_shipments.form.date = datetime.date(today.year, 02, 01)
     >>> create_shipments.execute('create_shipments')
     >>> Shipment = Model.get('shipment.work')
     >>> shipment, = Shipment.find([])
-    >>> shipment.planned_date == datetime.date(2015,01,05)
+    >>> shipment.planned_date == datetime.date(today.year, 01, 05)
     True

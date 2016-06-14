@@ -62,16 +62,5 @@
             <field name="action" ref="act_shipment_work_form"/>
             <field name="group" ref="contract.group_contract"/>
         </record>
-
-        <record model="ir.ui.view" id="shipment_work_view_list">
-            <field name="model">shipment.work</field>
-            <field name="inherit" ref="shipment_work.shipment_work_view_list"/>
-            <field name="name">shipment_work_list</field>
-        </record>
-        <record model="ir.ui.view" id="shipment_work_view_form">
-            <field name="model">shipment.work</field>
-            <field name="inherit" ref="shipment_work.shipment_work_view_form"/>
-            <field name="name">shipment_work_form</field>
-        </record>
     </data>
 </tryton>

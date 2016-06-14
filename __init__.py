@@ -3,15 +3,12 @@
 from trytond.pool import Pool
 from .contract import *
 
-
 def register():
     Pool.register(
         ContractService,
         CreateShipmentsStart,
         ContractLine,
         ShipmentWork,
-        ShipmentWorkProduct,
-        Asset,
         module='contract_shipment_work', type_='model')
     Pool.register(
         CreateShipments,
