@@ -77,7 +77,7 @@ class ContractLine:
         pool = Pool()
         Shipment = pool.get('shipment.work')
         table = Shipment.__table__()
-        cursor = Transaction().cursor
+        cursor = Transaction().connection.cursor()
         line_ids = [l.id for l in lines]
         values = dict.fromkeys(line_ids, None)
         cursor.execute(*table.select(table.contract_line,
