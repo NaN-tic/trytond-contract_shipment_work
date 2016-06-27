@@ -24,9 +24,13 @@ Create database::
     >>> config = config.set_trytond()
     >>> config.pool.test = True
 
-Install sale::
+Install contract_shipment_work::
 
     >>> Module = Model.get('ir.module')
+    >>> module, = Module.find([('name', '=', 'asset_shipment_work')])
+    >>> module.click('install')
+    >>> module, = Module.find([('name', '=', 'asset_owner')])
+    >>> module.click('install')
     >>> module, = Module.find([('name', '=', 'asset_contract')])
     >>> module.click('install')
     >>> module, = Module.find([('name', '=', 'contract_shipment_work')])
@@ -42,6 +46,18 @@ Reload the context::
 
     >>> User = Model.get('res.user')
     >>> config._context = User.get_preferences(True, config.context)
+
+Create contract user::
+
+    >>> Group = Model.get('res.group')
+    >>> contract_user = User()
+    >>> contract_user.name = 'Contract'
+    >>> contract_user.login = 'contract'
+    >>> contract_group, = Group.find([
+    ...     ('name', '=', 'Contracts Administration'),
+    ...     ])
+    >>> contract_user.groups.append(contract_group)
+    >>> contract_user.save()
 
 Create fiscal year::
 
@@ -118,7 +134,7 @@ Create payment term::
     >>> PaymentTerm = Model.get('account.invoice.payment_term')
     >>> PaymentTermLine = Model.get('account.invoice.payment_term.line')
     >>> payment_term = PaymentTerm(name='Direct')
-    >>> payment_term_line = PaymentTermLine(type='remainder', days=0)
+    >>> payment_term_line = PaymentTermLine(type='remainder')
     >>> payment_term.lines.append(payment_term_line)
     >>> payment_term.save()
 
@@ -128,13 +144,19 @@ Create an asset::
     >>> asset = Asset()
     >>> asset.name = 'Asset'
     >>> asset.product = product
-    >>> asset.owner = customer
+    >>> asset_owner = asset.owners.new()
+    >>> asset_owner.owner = customer
     >>> asset.save()
+    >>> asset_owner.save()
+    >>> asset.reload()
+    >>> asset.current_owner == customer
+    True
 
 
 Configure shipment work::
 
     >>> StockConfig = Model.get('stock.configuration')
+    >>> Sequence = Model.get('ir.sequence')
     >>> stock_config = StockConfig(1)
     >>> shipment_work_sequence, = Sequence.find([
     ...     ('code', '=', 'shipment.work'),
@@ -155,22 +177,23 @@ Create daily service::
 
 Create a contract::
 
+    >>> config.user = contract_user.id
     >>> Contract = Model.get('contract')
     >>> contract = Contract()
     >>> contract.party = customer
-    >>> contract.start_date = today
     >>> contract.start_period_date = today
     >>> contract.freq = 'monthly'
+    >>> contract.interval = 1
+    >>> contract.first_invoice_date = today
     >>> line = contract.lines.new()
     >>> line.service = service
-    >>> line.create_shipment_work = True
     >>> line.start_date = today
-    >>> line.first_invoice_date = today
-    >>> line.first_shipment_date = today
     >>> line.asset = asset
-    >>> contract.click('validate_contract')
+    >>> line.create_shipment_work = True
+    >>> line.first_shipment_date = today
+    >>> contract.click('confirm')
     >>> contract.state
-    u'validated'
+    u'confirmed'
 
 Create a shipments::
 
