@@ -24,7 +24,7 @@ Create database::
     >>> config = config.set_trytond()
     >>> config.pool.test = True
 
-Install account_invoice::
+Install contract_shipment_work::
 
     >>> Module = Model.get('ir.module')
     >>> contract_module, = Module.find([
@@ -91,10 +91,9 @@ Create payment term::
     >>> PaymentTerm = Model.get('account.invoice.payment_term')
     >>> PaymentTermLine = Model.get('account.invoice.payment_term.line')
     >>> payment_term = PaymentTerm(name='Term')
-    >>> payment_term_line = PaymentTermLine(type='percent', days=20,
-    ...     percentage=Decimal(50))
+    >>> payment_term_line = PaymentTermLine(type='percent')
     >>> payment_term.lines.append(payment_term_line)
-    >>> payment_term_line = PaymentTermLine(type='remainder', days=40)
+    >>> payment_term_line = PaymentTermLine(type='remainder')
     >>> payment_term.lines.append(payment_term_line)
     >>> payment_term.save()
     >>> party.customer_payment_term = payment_term
@@ -113,6 +112,7 @@ Create monthly service::
 Configure shipment work::
 
     >>> StockConfig = Model.get('stock.configuration')
+    >>> Sequence = Model.get('ir.sequence')
     >>> stock_config = StockConfig(1)
     >>> shipment_work_sequence, = Sequence.find([
     ...     ('code', '=', 'shipment.work'),
@@ -129,17 +129,18 @@ Create a contract::
     >>> contract.start_period_date = datetime.date(2015,01,01)
     >>> contract.start_date = datetime.date(2015,01,01)
     >>> contract.freq = 'monthly'
+    >>> contract.interval = 1
+    >>> contract.first_invoice_date = datetime.date(2015,01,05)
     >>> line = contract.lines.new()
     >>> line.service = service
     >>> line.create_shipment_work = True
     >>> line.start_date =  datetime.date(2015,01,05)
-    >>> line.first_invoice_date =  datetime.date(2015,01,05)
     >>> line.first_shipment_date =  datetime.date(2015,01,05)
     >>> line.unit_price
     Decimal('40')
-    >>> contract.click('validate_contract')
+    >>> contract.click('confirm')
     >>> contract.state
-    u'validated'
+    u'confirmed'
 
 Generate consumed lines::
     >>> create_shipments = Wizard('contract.create_shipments')
