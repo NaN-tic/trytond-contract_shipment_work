@@ -11,7 +11,6 @@ def register():
         ContractLine,
         ShipmentWork,
         ShipmentWorkProduct,
-        Asset,
         module='contract_shipment_work', type_='model')
     Pool.register(
         CreateShipments,

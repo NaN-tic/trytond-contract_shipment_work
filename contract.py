@@ -15,7 +15,7 @@ from trytond.wizard import Wizard, StateView, StateAction, Button
 from trytond.modules.contract.contract import RRuleMixin
 
 __all__ = ['ContractService', 'CreateShipmentsStart', 'CreateShipments',
-    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct', 'Asset']
+    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct']
 __metaclass__ = PoolMeta
 
 
@@ -44,34 +44,6 @@ class ShipmentWork:
     # TODO: Maybe origin could be better.
     contract_line = fields.Many2One('contract.line', 'Contract Line',
         select=True)
-
-    @classmethod
-    def __setup__(cls):
-        pool = Pool()
-        Asset = None
-        try:
-            Asset = pool.get('asset')
-        except KeyError:
-            pass
-        if Asset:
-            # Register asset before __setup__ so on_change are not cleared
-            cls.asset = fields.Many2One('asset', 'Asset',
-                domain=[
-                    If(Bool(Eval('party')),
-                        [('owner', '=', Eval('party'))],
-                        []),
-                    ],
-                depends=['party'])
-        super(ShipmentWork, cls).__setup__()
-
-    @fields.depends('asset', 'employees')
-    def on_change_asset(self):
-        if self.asset:
-            if (hasattr(self.asset, 'zone') and self.asset.zone and
-                    self.asset.zone.employee):
-                self.employees = [self.asset.zone.employee.id]
-            if self.asset.owner:
-                self.party = self.asset.owner.id
 
 
 class ShipmentWorkProduct:
@@ -195,9 +167,3 @@ class CreateShipments(Wizard):
         if len(shipments) == 1:
             action['views'].reverse()
         return action, data
-
-
-class Asset:
-    __name__ = 'asset'
-
-    shipments = fields.One2Many('shipment.work', 'asset', 'Work Shipments')
