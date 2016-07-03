@@ -15,7 +15,7 @@ from trytond.wizard import Wizard, StateView, StateAction, Button
 from trytond.modules.contract.contract import RRuleMixin
 
 __all__ = ['ContractService', 'CreateShipmentsStart', 'CreateShipments',
-    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct']
+    'ContractLine', 'ShipmentWork', 'ShipmentWorkProduct', 'Asset']
 __metaclass__ = PoolMeta
 
 
@@ -44,6 +44,34 @@ class ShipmentWork:
     # TODO: Maybe origin could be better.
     contract_line = fields.Many2One('contract.line', 'Contract Line',
         select=True)
+
+    @classmethod
+    def __setup__(cls):
+        pool = Pool()
+        Asset = None
+        try:
+            Asset = pool.get('asset')
+        except KeyError:
+            pass
+        if Asset:
+            # Register asset before __setup__ so on_change are not cleared
+            cls.asset = fields.Many2One('asset', 'Asset',
+                domain=[
+                    If(Bool(Eval('party')),
+                        [('owners.owner', '=', Eval('party'))],
+                        []),
+                    ],
+                depends=['party'])
+        super(ShipmentWork, cls).__setup__()
+
+    @fields.depends('asset', 'employees')
+    def on_change_asset(self):
+        if self.asset:
+            if (hasattr(self.asset, 'zone') and self.asset.zone and
+                    self.asset.zone.employee):
+                self.employees = [self.asset.zone.employee.id]
+            if self.asset.current_owner:
+                self.party = self.asset.current_owner.id
 
 
 class ShipmentWorkProduct:
@@ -87,19 +115,21 @@ class ContractLine:
         values.update(cursor.fetchall())
         return values
 
-    def get_shipment_works(self, end_date):
+    @classmethod
+    def get_shipment_works(cls, lines, end_date):
         shipment_works = []
-        if not self.create_shipment_work or self.service.freq is None:
-            return shipment_works
+        dates = cls.get_last_work_shipment_date(lines, None)
 
-        start_date = self.last_work_shipment_date or self.first_shipment_date
-        rs = self.service.rrule
-        r = rrule(rs._freq, interval=rs._interval, dtstart=start_date,
-            until=self.contract.end_date)
-        for date in r.between(todatetime(start_date),
-                todatetime(end_date), inc=True):
-            shipment_work = self.get_shipment_work(date.date())
-            shipment_works.append(shipment_work)
+        for line in lines:
+            last_work_shipment = dates.get(line.id)
+            start_date = last_work_shipment or line.first_shipment_date
+            rs = line.service.rrule
+            r = rrule(rs._freq, interval=rs._interval, dtstart=start_date,
+                until=line.contract.end_date)
+            for date in r.between(todatetime(start_date),
+                    todatetime(end_date), inc=True):
+                shipment_work = line.get_shipment_work(date.date())
+                shipment_works.append(shipment_work)
         return shipment_works
 
     def get_shipment_work(self, planned_date):
@@ -126,13 +156,8 @@ class ContractLine:
         pool = Pool()
         ShipmentWork = pool.get('shipment.work')
 
-        to_create = []
-        for line in lines:
-            shipment_works = line.get_shipment_works(date)
-            if shipment_works:
-                to_create += shipment_works
-
-        return ShipmentWork.create([w._save_values for w in to_create])
+        shipment_works = cls.get_shipment_works(lines, date)
+        return ShipmentWork.create([w._save_values for w in shipment_works])
 
 
 class CreateShipmentsStart(ModelView):
@@ -159,7 +184,10 @@ class CreateShipments(Wizard):
     def do_create_shipments(self, action):
         pool = Pool()
         ContractLine = pool.get('contract.line')
-        lines = ContractLine.search([])
+        lines = ContractLine.search([
+            ('service.freq', '!=', None),
+            ('contract.state', '=', 'confirmed'),
+            ('create_shipment_work', '=', True)])
 
         shipments = ContractLine.create_shipment_works(lines,
             self.start.date + relativedelta(days=+1))
@@ -167,3 +195,9 @@ class CreateShipments(Wizard):
         if len(shipments) == 1:
             action['views'].reverse()
         return action, data
+
+
+class Asset:
+    __name__ = 'asset'
+
+    shipments = fields.One2Many('shipment.work', 'asset', 'Work Shipments')
