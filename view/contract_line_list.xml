@@ -2,8 +2,9 @@
 <!-- The COPYRIGHT file at the top level of this repository contains the full
      copyright notices and license terms. -->
 <data>
-    <xpath expr="/tree/field[@name='unit_price']" position="after">
+    <xpath expr="/tree/field[@name='last_consumption_invoice_date']" position="after">
         <field name="create_shipment_work"/>
         <field name="first_shipment_date"/>
+        <field name="last_work_shipment_date"/>
     </xpath>
 </data>
