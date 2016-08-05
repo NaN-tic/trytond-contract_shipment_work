@@ -47,6 +47,9 @@ class ShipmentWork:
         'get_contract', searcher='search_contract')
 
     def get_contract(self, name):
+        Contract = Pool().get('contract')
+        if not isinstance(self.origin, Contract):
+            return None
         return (self.origin and self.origin.contract and
             self.origin.contract.id or None)
 
