@@ -191,6 +191,9 @@ class ContractLine:
         for line in lines:
             last_work_shipment = dates.get(line.id)
             start_date = last_work_shipment or line.first_shipment_date
+            if start_date > end_date:
+                continue
+
             rs = line.service.rrule
             r = rrule(rs._freq, interval=rs._interval, dtstart=start_date,
                 until=line.contract.end_date)
@@ -257,8 +260,8 @@ class CreateShipments(Wizard):
             ('contract.state', '=', 'confirmed'),
             ('create_shipment_work', '=', True)])
 
-        shipments = ContractLine.create_shipment_works(lines,
-            self.start.date + relativedelta(days=+1))
+        shipments = ContractLine.create_shipment_works(lines, self.start.date)
+            # self.start.date + relativedelta(days=+1))
         data = {'res_id': [c.id for c in shipments]}
         if len(shipments) == 1:
             action['views'].reverse()
