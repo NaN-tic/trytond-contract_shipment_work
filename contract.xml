@@ -50,8 +50,7 @@
         <record model="ir.action.act_window" id="act_shipment_works">
             <field name="name">Shipment Works</field>
             <field name="res_model">shipment.work</field>
-            <field name="domain" eval="[('contract', 'in', Eval('active_ids'),
-                Eval('active_model'))]" pyson="1"/>
+            <field name="domain" eval="[('contract', 'in', Eval('active_ids'))]" pyson="1"/>
         </record>
 
         <record model="ir.action.keyword" id="act_shipment_works_keyword1">

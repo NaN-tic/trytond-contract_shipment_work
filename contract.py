@@ -47,16 +47,13 @@ class ShipmentWork:
         'get_contract', searcher='search_contract')
 
     def get_contract(self, name):
-        Contract = Pool().get('contract')
-        if not isinstance(self.origin, Contract):
-            return None
-        return (self.origin and self.origin.contract and
-            self.origin.contract.id or None)
+        ContractLine = Pool().get('contract.line')
+        if isinstance(self.origin, ContractLine) and self.origin.contract:
+            return self.origin.contract.id
 
     @classmethod
     def search_contract(cls, name, clause):
-        print [('origin.contract',) + tuple(clause[1:])]
-        return [('origin.contract',) + tuple(clause[1:])]
+        return [('origin.contract',) + tuple(clause[1:] + ['contract.line'])]
 
     @classmethod
     def _get_origin(cls):
