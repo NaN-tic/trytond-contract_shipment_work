@@ -42,7 +42,6 @@ class ContractService(RRuleMixin):
 
 class ShipmentWork:
     __name__ = 'shipment.work'
-
     contract = fields.Function(fields.Many2One('contract', 'Contract'),
         'get_contract', searcher='search_contract')
 
@@ -82,11 +81,13 @@ class ShipmentWorkProduct:
             line.asset = self.shipment.asset
         return line
 
+
 class Contract:
     __name__ = 'contract'
 
-    shipment_works = fields.Function(fields.One2Many(
-        'shipment.work', None, 'Shipment Works'), 'get_shipment_works')
+    shipment_works = fields.Function(fields.One2Many('shipment.work', None,
+            'Shipment Works'),
+    'get_shipment_works')
 
     @classmethod
     def get_shipment_works(cls, contracts, name):
@@ -138,16 +139,15 @@ class Contract:
 
 class ContractLine:
     __name__ = 'contract.line'
-
-    last_work_shipment_date = fields.Function(fields.Date(
-            'Last Work Shipment Date'), 'get_last_work_shipment_date')
-
     create_shipment_work = fields.Boolean('Create Shipments?')
     first_shipment_date = fields.Date('First Shipment Date',
         states={
             'required': Bool(Eval('create_shipment_work')),
             'invisible': ~Bool(Eval('create_shipment_work')),
             }, depends=['create_shipment_work'])
+    last_work_shipment_date = fields.Function(fields.Date(
+            'Last Work Shipment Date'),
+        'get_last_work_shipment_date')
     shipment_works = fields.One2Many('shipment.work', 'origin',
         'ShipmentWork')
 
@@ -227,16 +227,11 @@ class ContractLine:
         shipment_works = cls.get_shipment_works(lines, date)
         return ShipmentWork.create([w._save_values for w in shipment_works])
 
-    @classmethod
-    def get_totals(cls, lines, names):
-        res = super(ContractLine, cls).get_totals(lines, names)
-
-
 
 class CreateShipmentsStart(ModelView):
     'Create Shipments Start'
     __name__ = 'contract.create_shipments.start'
-    date = fields.Date('Date')
+    date = fields.Date('Date', required=True)
 
     @staticmethod
     def default_date():
