@@ -3,9 +3,10 @@
      copyright notices and license terms. -->
 <form string="Create Shipments Work" col="2">
     <image name="tryton-dialog-information" xexpand="0" xfill="0"/>
-    <group col="3" id="label_date">
-        <label string="Create Contract Shipment Work up to" id="create"
-            yalign="0.0" xalign="0.0"/>
+    <group col="2" id="label_date">
+        <label string="Create Contract Shipment Work up to"
+            id="create" colspan="2"
+            yalign="0.0" xalign="0.0" xexpand="1"/>
         <label name="date"/>
         <field name="date"/>
     </group>
