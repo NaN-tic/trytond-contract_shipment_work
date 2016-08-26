@@ -196,7 +196,7 @@ class ContractLine:
 
             rs = line.service.rrule
             r = rrule(rs._freq, interval=rs._interval, dtstart=start_date,
-                until=line.contract.end_date)
+                until=line.contract.end_date)  # TODO: it must to be end_date?
             for date in r.between(todatetime(start_date),
                     todatetime(end_date), inc=True):
                 shipment_work = line.get_shipment_work(date.date())
