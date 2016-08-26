@@ -22,6 +22,10 @@ msgctxt "field:contract.line,last_work_shipment_date:"
 msgid "Last Work Shipment Date"
 msgstr "Data últim albará de treball"
 
+msgctxt "field:contract.line,shipment_works:"
+msgid "ShipmentWork"
+msgstr "Albarà de treball"
+
 msgctxt "field:contract.service,freq:"
 msgid "Frequency"
 msgstr "Freqüència"
@@ -34,9 +38,9 @@ msgctxt "field:contract.service,work_description:"
 msgid "Work Desctiption"
 msgstr "Descripció del treball"
 
-msgctxt "field:shipment.work,contract_line:"
-msgid "Contract Line"
-msgstr "Línia de contracte"
+msgctxt "field:shipment.work,contract:"
+msgid "Contract"
+msgstr "Contracte"
 
 msgctxt "model:contract.create_shipments.start,name:"
 msgid "Create Shipments Start"
@@ -44,6 +48,10 @@ msgstr "Inici crea albarans de treball"
 
 msgctxt "model:ir.action,name:act_shipment_work_form"
 msgid "Shipment Work"
+msgstr "Albarans de treball"
+
+msgctxt "model:ir.action,name:act_shipment_works"
+msgid "Shipment Works"
 msgstr "Albarans de treball"
 
 msgctxt "model:ir.action,name:wizard_create_shipments"
@@ -55,16 +63,16 @@ msgid "Create Shipments Work"
 msgstr "Crear albarans de treball"
 
 msgctxt "selection:contract.service,freq:"
+msgid ""
+msgstr ""
+
+msgctxt "selection:contract.service,freq:"
 msgid "Daily"
 msgstr "Diàriament"
 
 msgctxt "selection:contract.service,freq:"
 msgid "Monthly"
 msgstr "Mensualment"
-
-msgctxt "selection:contract.service,freq:"
-msgid "None"
-msgstr "Cap"
 
 msgctxt "selection:contract.service,freq:"
 msgid "Weekly"

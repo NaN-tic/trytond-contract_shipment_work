@@ -22,6 +22,10 @@ msgctxt "field:contract.line,last_work_shipment_date:"
 msgid "Last Work Shipment Date"
 msgstr "Fecha último albarán de trabajo"
 
+msgctxt "field:contract.line,shipment_works:"
+msgid "ShipmentWork"
+msgstr "Albarán de trabajo"
+
 msgctxt "field:contract.service,freq:"
 msgid "Frequency"
 msgstr "Frecuencia"
@@ -34,9 +38,9 @@ msgctxt "field:contract.service,work_description:"
 msgid "Work Desctiption"
 msgstr "Descripción trabajao"
 
-msgctxt "field:shipment.work,contract_line:"
-msgid "Contract Line"
-msgstr "Línea de contrato"
+msgctxt "field:shipment.work,contract:"
+msgid "Contract"
+msgstr "Contrato"
 
 msgctxt "model:contract.create_shipments.start,name:"
 msgid "Create Shipments Start"
@@ -44,6 +48,10 @@ msgstr "Inicio crear albaranes de trabajo"
 
 msgctxt "model:ir.action,name:act_shipment_work_form"
 msgid "Shipment Work"
+msgstr "Albaranes de trabajo"
+
+msgctxt "model:ir.action,name:act_shipment_works"
+msgid "Shipment Works"
 msgstr "Albaranes de trabajo"
 
 msgctxt "model:ir.action,name:wizard_create_shipments"
@@ -55,16 +63,16 @@ msgid "Create Shipments Work"
 msgstr "Crear albaranes de trabajo"
 
 msgctxt "selection:contract.service,freq:"
+msgid ""
+msgstr ""
+
+msgctxt "selection:contract.service,freq:"
 msgid "Daily"
 msgstr "Diariamente"
 
 msgctxt "selection:contract.service,freq:"
 msgid "Monthly"
 msgstr "Mensualmente"
-
-msgctxt "selection:contract.service,freq:"
-msgid "None"
-msgstr "Ninguno"
 
 msgctxt "selection:contract.service,freq:"
 msgid "Weekly"
