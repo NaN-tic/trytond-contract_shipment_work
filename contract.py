@@ -45,6 +45,13 @@ class ShipmentWork:
     contract = fields.Function(fields.Many2One('contract', 'Contract'),
         'get_contract', searcher='search_contract')
 
+    @classmethod
+    def __setup__(cls):
+        super(ShipmentWork, cls).__setup__()
+
+        if hasattr(cls, 'asset'):
+            cls.origin.domain = [('asset', '=', Eval('asset'))]
+
     def get_contract(self, name):
         ContractLine = Pool().get('contract.line')
         if isinstance(self.origin, ContractLine) and self.origin.contract:
